@@ -1,0 +1,119 @@
+
+1) SELECT title, author, COUNT(title) AS count 
+FROM requests 
+GROUP BY title, author 
+HAVING count>=20;
+
+2) SELECT DISTINCT requests.title, requests.author 
+FROM requests JOIN books_1 
+ON requests.title = books_1.title AND requests.author = books_1.author;
+
+3)SELECT S.student_ID, S.first_name, S.last_name, S.email, L.valid_date 
+FROM students AS S JOIN library_card AS L 
+ON S.student_ID=L.user_ID 
+WHERE student_ID IN(SELECT user_ID 
+                    FROM library_card 
+                    WHERE valid_date <'2022-12-17');
+
+4)SELECT P.publisher_ID, P.publisher_name, A.date_of_arrival 
+FROM publisher AS P JOIN arrival_of_books_1 AS A 
+ON P.publisher_ID=A.publisher_ID 
+WHERE A.date_of_arrival='2022-12-25';
+
+5)SELECT B1.title, B1.author, B2.bookshelf, B2.category 
+FROM books_1 AS B1 JOIN books_2 AS B2 
+ON B2.category=B1.category  
+WHERE B2.bookshelf='B';
+
+6)(SELECT A.staff_ID, A.name 
+FROM admin AS A 
+WHERE A.name LIKE 'Sh%') 
+UNION
+(SELECT R.staff_ID, R.name 
+ FROM receptionist AS R
+ WHERE R.staff_ID >1179);
+
+7)SELECT SUM(A.count) AS count, A.publisher_ID, A.date_of_arrival 
+FROM arrival_of_books_1 AS A 
+GROUP BY A.date_of_arrival, A.publisher_ID 
+ORDER BY A.date_of_arrival;
+
+8) ALTER TABLE students
+ADD password VARCHAR(50) NOT NULL
+DEFAULT '********';
+
+9)ALTER TABLE teachers 
+ADD password VARCHAR(50) NOT NULL 
+DEFAULT '********';
+
+10)CREATE VIEW Count_of_books AS 
+SELECT SUM(B1.count) AS count, B2.bookshelf 
+FROM books_1 AS B1 JOIN books_2 AS B2 
+ON B2.category=B1.category  
+GROUP BY B2.bookshelf 
+ORDER BY count;
+
+11)CREATE VIEW Not_booked_time AS 
+SELECT B1.time AS time, B1.room AS room, B2.floor AS floor 
+FROM booking_a_space_1 AS B1 JOIN booking_a_space_2 AS B2 
+ON B1.room = B2.room 
+WHERE B1.who_booked in ( SELECT B1.who_booked 
+                           FROM booking_a_space_1 AS B1 
+                           WHERE B1.who_booked = 0 );
+
+12)CREATE VIEW returned_books AS 
+SELECT B1.who_recorded, B1.book_ID, B2.title, B2.author, B2.year 
+FROM borrow AS B1 JOIN books_1 AS B2 
+ON B1.book_ID=B2.book_ID 
+WHERE B1.return_date <= '2022-12-16';
+
+13)CREATE VIEW Teachers_with_lc AS 
+SELECT L.card_ID, T.teacher_ID, T.first_name, T.last_name, T.email 
+FROM teachers AS T JOIN library_card AS L 
+ON T.teacher_ID=L.user_ID;
+
+14)CREATE VIEW not_returned_books AS 
+SELECT B1.who_recorded, B1.book_ID, B2.title, B2.author, B2.year 
+FROM borrow AS B1 JOIN books_1 AS B2 
+ON B1.book_ID=B2.book_ID
+WHERE B1.return_date > '2022-12-16';
+
+
+15)DELETE FROM borrow 
+WHERE borrow.return_date < '2022-12-16' AND(SELECT books_1.book_ID 
+                                            FROM books_1 
+                                            WHERE books_1.book_ID=601059437);
+
+
+16)UPDATE books_1 SET count=count+1 
+WHERE book_ID in (SELECT B1.book_ID 
+                    FROM books_1 AS B1 JOIN borrow AS B2 
+                    ON B1.book_ID=B2.book_ID 
+                    WHERE B2.book_ID = 601059437);
+
+
+17)ALTER TABLE Authentification_system
+  RENAME TO Authentification_system_to_staff;
+
+
+18)CREATE TRIGGER insert_new_books
+   BEFORE INSERT ON Books_1
+BEGIN
+    select raise(abort, 'This book is already in library')
+        where exists(select * from Books_1 where book_ID = new.book_ID);
+END;
+
+
+19)CREATE TRIGGER check_updated_booking_time
+    before update on Booking_a_space_1
+    when  new.time in(select time from Booking_a_space_1 where new.room=old.room and new.who_booked=old.who_booked)
+    begin
+        select raise(abort, 'This time is not available');
+    end;
+
+
+20)CREATE TRIGGER archive_old_books
+    after delete on Books_1
+    begin
+        insert into Archive_of_books(book_ID, title, author) values (old.book_ID, old.title, old.author);
+    end;

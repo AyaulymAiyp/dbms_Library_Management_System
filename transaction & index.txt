@@ -1,0 +1,19 @@
+
+
+transaction
+begin transaction;
+insert into Feedback(book_ID, user_id, feedback) VALUES (1, 45, 'good book');
+commit;
+
+index
+create unique index feedback_no
+on Feedback(book_ID);
+to see index:
+pragma index_list(Feedback);
+
+
+
+
+
+
+
